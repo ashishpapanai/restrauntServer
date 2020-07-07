@@ -6,11 +6,12 @@ var logger = require('morgan');
 var passport = require('passport');
 var authenticate = require('./authenticate');
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/user');
+var usersRouter = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var app = express();
+var config = require('./config');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 
@@ -19,7 +20,7 @@ const mongoose = require('mongoose');
 
 const Dishes = require('./models/dishes');
 
-const url = 'mongodb://localhost:27017/conFusion';
+const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
 connect.then((db) => {
