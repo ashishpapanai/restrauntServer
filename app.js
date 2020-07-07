@@ -3,9 +3,10 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
+var passport = require('passport');
+var authenticate = require('./authenticate');
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var usersRouter = require('./routes/user');
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
@@ -41,35 +42,22 @@ app.use(session({
   store: new FileStore()
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-function auth(req, res, next) {
-  console.log(req.session);
+function auth (req, res, next) {
+  console.log(req.user);
 
-  if (!req.session.user) {
+  if (!req.user) {
     var err = new Error('You are not authenticated!');
     err.status = 403;
-    return next(err);
+    next(err);
   }
-}
-function auth(req, res, next) {
-  let err
-  console.log(req.session);
-
-  if (!req.session.user) {
-    err = new Error('You are not authenticated!')
-    err.status = 403;
-    return next(err);
-  } else {
-    if (req.session.user === 'authenticated') {
-      next();
-    }
-    else {
-      err = new Error('You are not authenticated!')
-      err.status = 403;
-      return next(err);
-    }
+  else {
+        next();
   }
 }
 
