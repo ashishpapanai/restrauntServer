@@ -8,11 +8,11 @@ const authenticate = require('../authenticate')
 const Promo = require('../models/promotion');
 const { create } = require('../models/promotion');
 const cors = require('./cors');
-
+promoRouter.route('/')
 promoRouter.route('/')
     .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
     .get(cors.cors, (req, res, next) => {
-        Promo.find({})
+        Promo.find(Promotions.find(req.query))
             .then((promos) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json')

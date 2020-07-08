@@ -6,9 +6,9 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var passport= require('passport');
 var authenticate = require('./authenticate');
-
+var commentRouter = require("./routes/commentRouter");
 var config = require('./config');
-
+const uploadRouter = require("./routes/uploadRouter");
 var db= mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function(){
@@ -51,7 +51,8 @@ app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
 app.use('/leadership', leaderRouter);
 app.use('/favorites', favoriteRouter);
-
+app.use("/comments", commentRouter);
+app.use("/imageUpload", uploadRouter);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   var err = new Error('Not Found');
