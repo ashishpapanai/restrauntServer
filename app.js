@@ -11,6 +11,17 @@ var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var app = express();
+
+// Secure traffic only
+app.all('*', (req, res, next) => {
+  if (req.secure) {
+    return next();
+  }
+  else {
+    res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url);
+  }
+});
+
 var config = require('./config');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
@@ -19,7 +30,6 @@ var FileStore = require('session-file-store')(session);
 const mongoose = require('mongoose');
 
 const Dishes = require('./models/dishes');
-
 const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
@@ -58,6 +68,7 @@ function auth (req, res, next) {
     next(err);
   }
   else {
+    console.log(authenticate.getToken())
         next();
   }
 }
