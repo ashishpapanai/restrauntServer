@@ -1,104 +1,86 @@
-var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var passport = require('passport');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+var mongoose = require('mongoose');
+var passport= require('passport');
 var authenticate = require('./authenticate');
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+
+var config = require('./config');
+
+var db= mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function(){
+    console.log("Connected successfully to server.")
+})
+
+var routes = require('./routes/index');
+var users = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
+var favoriteRouter = require('./routes/favouriteRouter');
+
 var app = express();
-const uploadRouter = require('./routes/uploadRouter');
-// Secure traffic only
-app.all('*', (req, res, next) => {
-  if (req.secure) {
-    return next();
-  }
-  else {
-    res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url);
-  }
+
+app.all('*', function(req, res, next){
+    if (req.secure){
+        return next();
+    }
+    res.redirect('https://' + req.hostname + ':' + app.get('secPort') + req.url);
 });
 
-var config = require('./config');
-var session = require('express-session');
-var FileStore = require('session-file-store')(session);
-
-
-const mongoose = require('mongoose');
-
-const Dishes = require('./models/dishes');
-const url = config.mongoUrl;
-const connect = mongoose.connect(url);
-
-connect.then((db) => {
-  console.log("Connected correctly to server");
-}, (err) => { console.log(err); });
-
-// view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
-app.use(session({
-  name: 'session-id',
-  secret: '12345-67890-09876-54321',
-  saveUninitialized: false,
-  resave: false,
-  store: new FileStore()
-}));
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+
 
 app.use(passport.initialize());
-app.use(passport.session());
-
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-
-function auth (req, res, next) {
-  console.log(req.user);
-
-  if (!req.user) {
-    var err = new Error('You are not authenticated!');
-    err.status = 403;
-    next(err);
-  }
-  else {
-    console.log(authenticate.getToken())
-        next();
-  }
-}
-
-app.use(auth);
-
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/', routes);
+app.use('/users', users);
 app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
-app.use('/leaders', leaderRouter);
-app.use('/imageUpload',uploadRouter);
+app.use('/leadership', leaderRouter);
+app.use('/favorites', favoriteRouter);
 
 // catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  next(createError(404));
+app.use(function(req, res, next) {
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
 });
 
-// error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// error handlers
 
-  // render the error page
+// development error handler
+// will print stacktrace
+if (app.get('env') === 'development') {
+  app.use(function(err, req, res, next) {
+    res.status(err.status || 500);
+    res.json({
+      message: err.message,
+      error: err
+    });
+  });
+}
+
+// production error handler
+// no stacktraces leaked to user
+app.use(function(err, req, res, next) {
   res.status(err.status || 500);
-  res.render('error');
+  res.json({
+    message: err.message,
+    error: {}
+  });
 });
 
 module.exports = app;
